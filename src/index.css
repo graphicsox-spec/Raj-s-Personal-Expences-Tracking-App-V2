@@ -1,0 +1,90 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply antialiased;
+  color: #e6e7ea;
+  background-color: #08090d;
+  background-image:
+    radial-gradient(70% 60% at 100% 0%, rgba(139, 92, 246, 0.07) 0%, transparent 55%),
+    radial-gradient(60% 50% at 0% 100%, rgba(99, 102, 241, 0.06) 0%, transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Every lucide icon is rendered as a thin line, app-wide. */
+.lucide {
+  stroke-width: 1.5px;
+}
+
+@layer components {
+  /* Minimal hairline panel — the single surface style across the app. */
+  .glass,
+  .panel {
+    @apply rounded-2xl border border-white/[0.06] bg-white/[0.02];
+  }
+  .hairline {
+    @apply border-white/[0.06];
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-300 to-violet-300 bg-clip-text text-transparent;
+  }
+  /* Subtle hover for interactive panels. */
+  .lift {
+    @apply transition-colors duration-200 hover:border-white/[0.14] hover:bg-white/[0.04];
+  }
+  /* Tabular, monospaced figures for that precise fintech feel. */
+  .num {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .delay-1 { animation-delay: 0.04s; }
+  .delay-2 { animation-delay: 0.08s; }
+  .delay-3 { animation-delay: 0.12s; }
+  .delay-4 { animation-delay: 0.16s; }
+  .delay-5 { animation-delay: 0.20s; }
+  .delay-6 { animation-delay: 0.24s; }
+}
+
+/* Hide native number spinners (custom thin steppers used instead). */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}

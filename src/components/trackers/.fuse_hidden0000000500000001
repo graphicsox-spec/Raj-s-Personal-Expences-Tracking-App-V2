@@ -1,0 +1,188 @@
+/**
+ * Tab 3 – Credit Card Tracker
+ */
+import { useState } from "react";
+import { Plus, CreditCard as CardIcon, Pencil, Trash2, User } from "lucide-react";
+import { Card, SectionHeader } from "../common/Card";
+import { Button } from "../common/Button";
+import { Modal } from "../common/Modal";
+import { Input } from "../common/Input";
+import { CustomSelect } from "../common/CustomSelect";
+import { ProgressBar } from "../common/ProgressBar";
+import { useAppState } from "../../context/AppStateContext";
+import { formatCurrency } from "../../hooks/useAnalytics";
+import type { CreditCard } from "../../types";
+
+const blank = { name: "", balance: "", creditLimit: "", dueDay: "1", last4: "", owner: "" };
+
+const OWNER_OPTIONS = [
+  { value: "", label: "— none —" },
+  { value: "Raj", label: "Raj" },
+  { value: "Sharan", label: "Sharan" },
+  { value: "Joint", label: "Joint" },
+];
+
+export function CreditCardTracker() {
+  const { state, addCard, updateCard, deleteCard } = useAppState();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<CreditCard | null>(null);
+  const [form, setForm] = useState({ ...blank });
+
+  const totalBalance = state.creditCards.reduce((s, c) => s + c.balance, 0);
+  const totalLimit = state.creditCards.reduce((s, c) => s + c.creditLimit, 0);
+
+  const openNew = () => {
+    setEditing(null);
+    setForm({ ...blank });
+    setOpen(true);
+  };
+
+  const openEdit = (c: CreditCard) => {
+    setEditing(c);
+    setForm({
+      name: c.name,
+      balance: String(c.balance),
+      creditLimit: String(c.creditLimit),
+      dueDay: String(c.dueDay),
+      last4: c.last4 ?? "",
+      owner: c.owner ?? "",
+    });
+    setOpen(true);
+  };
+
+  const save = () => {
+    const balance = parseFloat(form.balance) || 0;
+    const creditLimit = parseFloat(form.creditLimit) || 0;
+    const dueDay = Math.min(Math.max(parseInt(form.dueDay, 10) || 1, 1), 31);
+    if (!form.name.trim()) return;
+    const payload = {
+      name: form.name.trim(),
+      balance,
+      creditLimit,
+      dueDay,
+      last4: form.last4,
+      owner: form.owner || undefined,
+    };
+    if (editing) {
+      updateCard({ ...editing, ...payload });
+    } else {
+      addCard(payload);
+    }
+    setOpen(false);
+  };
+
+  const summary = [
+    { label: "Total Balance", value: formatCurrency(totalBalance), cls: "text-rose-300" },
+    { label: "Total Credit Limit", value: formatCurrency(totalLimit), cls: "text-white" },
+    { label: "Available Credit", value: formatCurrency(totalLimit - totalBalance), cls: "text-emerald-300" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {summary.map((s, i) => (
+          <Card key={s.label} className={`animate-fade-up delay-${i + 1}`}>
+            <p className="text-sm text-slate-400">{s.label}</p>
+            <p className={`mt-1 text-2xl font-extrabold ${s.cls}`}>{s.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      <SectionHeader
+        title="Your Cards"
+        subtitle="Track balances and available credit per card"
+        action={<Button onClick={openNew}><Plus size={16} /> Add Card</Button>}
+      />
+
+      {state.creditCards.length === 0 ? (
+        <Card>
+          <p className="py-8 text-center text-sm text-slate-500">No credit cards added yet.</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {state.creditCards.map((c, i) => {
+            const util = c.creditLimit > 0 ? (c.balance / c.creditLimit) * 100 : 0;
+            const available = c.creditLimit - c.balance;
+            return (
+              <div
+                key={c.id}
+                className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-brand-600/30 via-ink-700 to-ink-800 p-5 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-glow animate-fade-up delay-${i + 1}`}
+              >
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/20 blur-2xl" />
+                <div class="" className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-200">{c.name}</p>
+                      {c.owner && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-brand-200">
+                          <User size={10} /> {c.owner}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 font-mono text-sm tracking-[0.2em] text-slate-400">•••• {c.last4 || "••••"}</p>
+                  </div>
+                  <CardIcon size={22} className="text-brand-300" />
+                </div>
+
+                <div className="mt-6">
+                  <p className="text-xs text-slate-400">Current Balance</p>
+                  <p className="text-2xl font-extrabold text-white">{formatCurrency(c.balance)}</p>
+                </div>
+
+                <div className="mt-4">
+                  <ProgressBar percent={util} colorClass={util > 70 ? "bg-gradient-to-r from-rose-500 to-red-500" : "bg-gradient-to-r from-emerald-400 to-teal-500"} />
+                  <div className="mt-1.5 flex justify-between text-xs text-slate-400">
+                    <span>{util.toFixed(0)}% used</span>
+                    <span>{formatCurrency(available)} available</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs text-slate-400">
+                  <span>Due day {c.dueDay}</span>
+                  <span>Limit {formatCurrency(c.creditLimit)}</span>
+                </div>
+
+                <div className="mt-3 flex gap-2">
+                  <button onClick={() => openEdit(c)} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-white/20">
+                    <Pencil size={13} /> Edit
+                  </button>
+                  <button onClick={() => deleteCard(c.id)} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-rose-300 transition-colors hover:bg-rose-500/20">
+                    <Trash2 size={13} /> Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editing ? "Edit Card" : "Add Credit Card"}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={save} disabled={!form.name.trim()}>{editing ? "Save Changes" : "Add Card"}</Button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Card Name" className="sm:col-span-2" placeholder="e.g. Chase Sapphire" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
+          <Input label="Current Balance" type="number" min="0" step="0.01" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} />
+          <Input label="Credit Limit" type="number" min="0" step="0.01" value={form.creditLimit} onChange={(e) => setForm({ ...form, creditLimit: e.target.value })} />
+          <Input label="Due Day (1-31)" type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} />
+          <Input label="Last 4 Digits" maxLength={4} placeholder="4821" value={form.last4} onChange={(e) => setForm({ ...form, last4: e.target.value })} />
+          <CustomSelect
+            label="Owner"
+            className="sm:col-span-2"
+            value={form.owner}
+            onChange={(v) => setForm({ ...form, owner: v })}
+            placeholder="— none —"
+            options={OWNER_OPTIONS}
+          />
+        </div>
+      </Modal>
+    </div>
+  );
+}
