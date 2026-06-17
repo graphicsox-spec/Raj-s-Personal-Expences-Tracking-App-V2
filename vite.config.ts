@@ -7,7 +7,7 @@ export default defineConfig({
   // viteSingleFile inlines all JS/CSS into one index.html so the production
   // build can be opened by double-clicking dist/index.html (file://) — no server.
   plugins: [react(), viteSingleFile()],
-  base: "./",
+  base: "/Raj-s-Personal-Expences-Tracking-App-V2/",
   server: { port: 5180 },
   preview: { port: 4180 },
 });
